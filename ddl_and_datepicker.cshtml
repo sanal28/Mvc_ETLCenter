@@ -1,0 +1,477 @@
+
+@{
+    ViewBag.Title = "Aggregate";
+    Layout = "~/Views/Shared/_AdminMaster.cshtml";
+}
+<script type="text/javascript">
+    
+    var CurrenterrorPageId = 1;
+    var RowCount = 10;
+    var OffsetVal = 1;
+    var ClassName = "";
+    var loopVal = 0;
+    var classId = 0;
+    var PageCountError = 0;
+    $('#liReport').addClass("currentitem");
+    $(document).ready(function () {
+        $('#tblaggregateReport').append("<tr><td colspan='20' class='gridrow1'>No Records Found</td></tr>");
+        $(document).mouseup(function (e) {
+            $("#innersetting").hide();
+        });
+        LoadDdls('/Admin/GetGroupList', $('#ddlPackageroup'), 'Run_Id', 'Run_Name');
+        LoadDdls('/PackageConnection/GetPackageList', $('#ddlPackageName'), 'Package_id', 'Package_Name');
+        LoadDdls('/Package/GetEmployeeList', $('#ddlAsssignedTo'), 'ID_Employee', 'EmpName');
+        $("#listaggregatereport").click(function () {
+            $('#liInfo').removeClass("currentitem");
+            $('#ilRun').removeClass("currentitem");
+            $('#liReport').addClass("currentitem");
+
+        });
+        $("#dtStartDate").prop('disabled', true);
+        $("#dtEndDate").prop('disabled', true);
+        $("#chkActive").click(function (){
+            var checkBoxActive = $('#chkActive').is(':checked');
+            if (checkBoxActive == true)
+            {
+                $("#dtStartDate").prop('disabled', false);
+                $("#dtEndDate").prop('disabled', false);
+            }
+            else
+            {
+                $("#dtStartDate").prop('disabled', true);
+                $("#dtEndDate").prop('disabled', true);
+            }
+        });
+
+        $("#ddlPackageroup").click(function () {
+            $("#divPackageroup").removeClass("ErrorFocus");
+            $('#pAggregateReport').text("");
+        });
+        $("#ddlPackageName").click(function () {
+            $("#divPackageName").removeClass("ErrorFocus");
+            $('#pAggregateReport').text("");
+        });
+        $("#ddlAsssignedTo").click(function () {
+            $("#divAsssignedTo").removeClass("ErrorFocus");
+            $('#pAggregateReport').text("");
+        });
+        $("#dtStartDate").click(function () {
+            $("#divStartDate").removeClass("ErrorFocus");
+            $('#pAggregateReport').text("");
+        });
+        $("#dtEndDate").click(function () {
+            $("#divEndDate").removeClass("ErrorFocus");
+            $('#pAggregateReport').text("");
+        });
+        $("#dtEndDate").datepicker({
+            dateFormat: 'mm/dd/yy',
+            changeMonth: true,
+            changeYear: true,
+            yearRange: '1900:2100',
+             onSelect: function (d, i) {
+                if (d !== i.lastVal) {
+
+                }
+            }
+        });
+        $("#dtStartDate").datepicker({
+            dateFormat: 'mm/dd/yy',
+            changeMonth: true,
+            changeYear: true,
+            yearRange: '1900:2100',
+            onSelect: function (d, i) {
+                if (d !== i.lastVal) {
+
+                }
+            }
+        });
+        $("#btnSubmit").click(function () {
+               @{ 
+                 Session["groupid"] = null;
+                 Session["pkgid"] = null;
+                 Session["empid"] = null;
+                 Session["startdate"] = null;
+                 Session["enddate"] = null;
+                }
+            CurrenterrorPageId = 1;
+            FirstButonClick($('.paginationNUMOpenbtn'), $('.pgNumber1'), 'paginationNUM-ACTVbtn', CurrenterrorPageId, 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            var packageGroup = $("#ddlPackageroup option:selected").val();
+            var packageName = $("#ddlPackageName option:selected").val();
+            var EmployeeName = $("#ddlAsssignedTo option:selected").val();
+            var startDate = $("#dtStartDate").val();
+            var EndDate = $("#dtEndDate").val();
+            localStorage.setItem("GroupId", packageGroup);
+            localStorage.setItem("PackageId", packageName);
+            localStorage.setItem("EmployeeId", EmployeeName);
+            localStorage.setItem("StartDate", startDate);
+            localStorage.setItem("EndDate", EndDate);
+            OffsetVal = ((CurrenterrorPageId - 1) * RowCount);
+            if (Validate("aggregatereport")) {
+                $.ajax({
+                    type: "POST",
+                    url: "/ETLReport/GetAggregateReport",
+                    data: { PackageGroup: packageGroup, packageName: packageName, EmployeeName: EmployeeName, startDate: startDate, EndDate: EndDate, PageNo: OffsetVal, RowCount: RowCount},
+                    success: function (response) {
+                        var AggregateReportDetails = $.parseJSON(response);
+                        if (response.flag == false) {
+                   
+                        }
+                        else
+                            BindAggregate(AggregateReportDetails);
+                       // $('#ddlPackageName').find('option').not(':first').val('');
+                       // $('#ddlAsssignedTo').find('option').not(':first').val('');
+                       // $('#ddlPackageroup').val('');
+                       // $('#ddlPackageName').val('');
+                       // $("#ddlAsssignedTo").val("");
+                        $("#ddlAsssignedTo").val(0);
+                        $("#ddlPackageroup").val(0);
+                        $("#ddlPackageName").val(0);
+                        $("#dtStartDate").prop('disabled', true);
+                        $("#dtEndDate").prop('disabled', true);
+                        $("#dtStartDate").val("");
+                        $("#dtEndDate").val("");
+                        $('#chkActive').prop('checked', false);
+                        $("#divPackageroup").removeClass("ErrorFocus");
+                        $("#divPackageName").removeClass("ErrorFocus");
+                        $("#divAsssignedTo").removeClass("ErrorFocus");
+                        $("#divStartDate").removeClass("ErrorFocus");
+                        $("#divEndDate").removeClass("ErrorFocus");
+                        $('#pAggregateReport').text('');
+                    },
+                
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+
+            }
+        });
+        $("#btnundo").click(function () {
+             @{ 
+                 Session["groupid"] = null;
+                 Session["pkgid"] = null;
+                 Session["empid"] = null;
+                 Session["startdate"] = null;
+                 Session["enddate"] = null;
+                }
+            window.localStorage.clear();
+            
+            //$('#ddlPackageName').find('option').not(':first').val('');
+            //$('#ddlAsssignedTo').find('option').not(':first').val('');
+            //$('#ddlPackageroup').val('');
+            $("#ddlAsssignedTo").val(0);
+            $("#ddlPackageroup").val(0);
+            $("#ddlPackageName").val(0);
+            window.location.reload(true);
+            $("#dtStartDate").prop('disabled', true);
+            $("#dtEndDate").prop('disabled', true);
+            $("#dtStartDate").val("");
+            $("#dtEndDate").val("");
+            $('#chkActive').prop('checked', false);
+            $("#divPackageroup").removeClass("ErrorFocus");
+            $("#divPackageName").removeClass("ErrorFocus");
+            $("#divAsssignedTo").removeClass("ErrorFocus");
+            $("#divStartDate").removeClass("ErrorFocus");
+            $("#divEndDate").removeClass("ErrorFocus");
+            $('#pAggregateReport').text('');
+      
+           // $('#tblaggregateReport').append("<tr><td colspan='20' class='gridrow1'>No Records Found</td></tr>");
+            $('#tblaggregateReport > tbody').children("tr:gt(0)").remove();
+            $('#tblaggregateReport').append("<tr><td colspan='20' class='gridrow1'>No Records Found</td></tr>");
+            $("#divEmailAlertPage").hide();
+        });
+
+
+        $('.paginationbtndivNum > a').each(function () {
+            $(this).click(function () {
+
+                classId = parseInt($(this).find('.paginationNUMOpenbtn').attr("name"));
+                CurrenterrorPageId = parseInt($(this).find('.paginationNUMOpenbtn').text());
+                loopVal = parseInt($(this).find('.paginationNUMOpenbtn').text());
+                LoadEachButton($('.paginationNUMOpenbtn'), '.pgNumber', 'paginationNUM-ACTVbtn', 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active', PageCountError);
+                loadAggregateDetails();
+                disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, loopVal);
+            });
+        });
+        $("#NXTbtn").click(function () {
+            CurrenterrorPageId = CurrenterrorPageId + 1;
+            getLoopValAndClassId($('.paginationNUM-ACTVbtn'), $('.paginationNUMMOREtxt-Active'), $('.paginationNUMMOREtxt1-Active'));
+            NextButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber' + classId), $('.pgNumber' + (classId + 1)), 'paginationNUM-ACTVbtn',
+                PageCountError, 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId);
+            loadAggregateDetails();
+        });
+
+        $("#PRVbtn").click(function () {
+            CurrenterrorPageId = CurrenterrorPageId - 1;
+            getLoopValAndClassId($('.paginationNUM-ACTVbtn'), $('.paginationNUMMOREtxt-Active'), $('.paginationNUMMOREtxt1-Active'));
+            prevButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber' + (classId - 1)), $('.pgNumber' + classId), 'paginationNUM-ACTVbtn',
+                'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active', CurrenterrorPageId);
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId, $('.paginationNUM-ACTVbtn'));
+            loadAggregateDetails();
+        });
+        $("#FRSTbtn").click(function () {
+            CurrenterrorPageId = 1;
+            FirstButonClick($('.paginationNUMOpenbtn'), $('.pgNumber1'), 'paginationNUM-ACTVbtn', CurrenterrorPageId, 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId, $('.paginationNUM-ACTVbtn'));
+            loadAggregateDetails();
+        });
+        $("#LSTbtn").click(function () {
+            CurrenterrorPageId = PageCountError;
+            LastButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber5'), $('.pgNumber' + CurrenterrorPageId), 'paginationNUM-ACTVbtn', CurrenterrorPageId,
+                'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId);
+            loadAggregateDetails();
+        });
+
+
+    });
+      function preventDefaultClick() {
+        $('.hreflink').click(function (e) {
+            e.preventDefault();//prevent default click
+        });
+    }
+
+    function loadAggregateDetails() {
+        var packageGroup = localStorage.getItem("GroupId");
+        var packageName= localStorage.getItem("PackageId");
+        var EmployeeName= localStorage.getItem("EmployeeId");
+        var startDate=  localStorage.getItem("StartDate");
+        var EndDate= localStorage.getItem("EndDate");
+        OffsetVal = ((CurrenterrorPageId - 1) * RowCount);
+            $.ajax({
+                type: "POST",
+                url: "/ETLReport/GetAggregateReport",
+                data: { PackageGroup: packageGroup, packageName: packageName, EmployeeName: EmployeeName, startDate: startDate, EndDate: EndDate, PageNo: OffsetVal, RowCount: RowCount },
+                success: function (response) {
+                    var AggregateReportDetails = $.parseJSON(response);
+                    BindAggregate(AggregateReportDetails);  
+                 
+                },
+
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+    }
+    function BindAggregate(AggregateReportDetails)
+    {
+        $('#tblaggregateReport > tbody').children("tr:gt(0)").remove();
+        if (AggregateReportDetails["Result"] == undefined || AggregateReportDetails["Result"] == null) {
+            if (AggregateReportDetails[0]["TotalRowCount"] % 10 == 0)
+                PageCountError = AggregateReportDetails[0]["TotalRowCount"] / 10;
+            else
+                PageCountError = Math.floor(AggregateReportDetails[0]["TotalRowCount"] / 10) + 1;
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId);
+            showAndHidePages(PageCountError, CurrenterrorPageId, $('.paginationbtndivNum > a'), '.pgNumber');
+            var swapRowStyle = true;
+            for (i = 0; i < AggregateReportDetails.length; i++) {
+
+                if ((!AggregateReportDetails[i].hasOwnProperty('Package Name')) && (!AggregateReportDetails[i].hasOwnProperty('EmployeeName'))) {
+                    $("#tdpname").hide();
+                    $("#tdename").hide();
+                    if (swapRowStyle) {
+                        $('#tblaggregateReport').append("<tr><td class='gridrow1'>" + AggregateReportDetails[i]["Group"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Start Date"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["End Date"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Unattempted"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Initialised"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Running"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Precedent Waiting"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Completed"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Aborted"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Error"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Failed"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Precedent Failed"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Errored Run"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Errored Run-Completed"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Errored Run-Error"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Failed Run"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Failed Run-Completed"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Failed Run-Failed"] + "</td></tr>");
+                        swapRowStyle = false;
+
+                    }
+                    else {
+                        $('#tblaggregateReport').append("<tr><td class='gridrow2'>" + AggregateReportDetails[i]["Group"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Start Date"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["End Date"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Unattempted"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Initialised"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Running"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Precedent Waiting"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Completed"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Aborted"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Error"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Failed"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Precedent Failed"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Errored Run"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Errored Run-Completed"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Errored Run-Error"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Failed Run"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Failed Run-Completed"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Failed Run-Failed"] + "</td></tr>");
+
+                        swapRowStyle = true;
+                    }
+
+                }
+                else {
+                    $("#tdpname").show();
+                    $("#tdename").show();
+                    if (swapRowStyle) {
+                        $('#tblaggregateReport').append("<tr><td class='gridrow1'>" + AggregateReportDetails[i]["Group"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Package Name"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["EmployeeName"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Start Date"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["End Date"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Unattempted"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Initialised"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Running"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Precedent Waiting"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Completed"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Aborted"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Error"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Failed"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Precedent Failed"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Errored Run"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Errored Run-Completed"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Errored Run-Error"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Failed Run"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Failed Run-Completed"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Failed Run-Failed"] + "</td></tr>");
+                        swapRowStyle = false;
+
+                    }
+                    else {
+                        $('#tblaggregateReport').append("<tr><td class='gridrow2'>" + AggregateReportDetails[i]["Group"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Package Name"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["EmployeeName"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Start Date"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["End Date"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Unattempted"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Initialised"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Running"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Precedent Waiting"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Completed"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Aborted"] + "</td><td class='gridrow1'>"
+                            + AggregateReportDetails[i]["Error"] + "</td><td class='gridrow1'>" + AggregateReportDetails[i]["Failed"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Precedent Failed"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Errored Run"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Errored Run-Completed"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Errored Run-Error"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Failed Run"] + "</td><td class='gridrow2'>" + AggregateReportDetails[i]["Failed Run-Completed"] + "</td><td class='gridrow2'>"
+                            + AggregateReportDetails[i]["Failed Run-Failed"] + "</td></tr>");
+
+                        swapRowStyle = true;
+                    }
+                }
+            }
+            $("#divEmailAlertPage").show();
+        }
+        else {
+            $("#divEmailAlertPage").hide();
+            $('#tblaggregateReport').append("<tr><td colspan='20' class='gridrow1'>No Records Found</td></tr>");
+        }
+
+
+    }
+  
+
+</script>
+<div class="container">
+    <div class="contentmaindiv">
+        <div class="etlheading">Aggregate Report</div>
+        <div class="etlcontentdiv">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="etllabel">Package Group</div>
+                    <div class="inputtextdiv" id="divPackageroup">
+                        <select class="etltextbox" id="ddlPackageroup" onclick="this.setAttribute('value', this.value);">
+                            <option value=0>please choose...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">Package Name</div>
+                    <div class="inputtextdiv" id="divPackageName">
+                        <select class="etltextbox" id="ddlPackageName" onclick="this.setAttribute('value', this.value);">
+                            <option value=0>please choose...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">Assigned To</div>
+                    <div class="inputtextdiv" id="divAsssignedTo">
+                        <select class="etltextbox" id="ddlAsssignedTo" onclick="this.setAttribute('value', this.value);">
+                            <option value=0>please choose...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">Is Active</div>
+                    <input type="checkbox" id="chkActive">
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">Start Date</div>
+                    <div class="inputtextdiv" id="divStartDate"><input class="etltextbox" type="text" id="dtStartDate" readonly></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">End Date</div>
+                    <div class="inputtextdiv" id="divEndDate"><input class="etltextbox" type="text" id="dtEndDate" readonly></div>
+                </div>
+
+            </div>
+        </div>
+        <div class="space"></div>
+        <div class="btndiv1">
+            <p id="pAggregateReport"></p>
+            <button title="Refresh" class="submitbtn" id="btnundo"><i class="fas fa-undo-alt"></i></button>
+            <button title="Generate Report" class="submitbtn" id="btnSubmit"><img src="~/Images/generate-report.png" alt="" /></button>
+        </div>
+        <div class="etlheading">Report List</div>
+        <div class="gridmaindiv">
+            <div class="gridsubdivaa" style="border: 1px solid #b7b7b7; ">
+                <div class="gridsubdiv" >
+                    <table width="3000px"  border="0" cellspacing="0" cellpadding="0" id="tblaggregateReport">
+                        <tbody>
+                            <tr>
+                                <td class="gridheader">Group</td>
+                                <td class="gridheader" id="tdpname">Package Name</td>
+                                <td class="gridheader" id="tdename">Employee Name</td>
+                                <td class="gridheader">Start Date </td>
+                                <td class="gridheader">End Date  </td>
+                                <td class="gridheader">Unattempted</td>
+                                <td class="gridheader">Initialised</td>
+                                <td class="gridheader">Running</td>
+                                <td class="gridheader">Precedent Waiting</td>
+                                <td class="gridheader">Completed</td>
+                                <td class="gridheader">Aborted	</td>
+                                <td class="gridheader">Error</td>
+                                <td class="gridheader">Failed</td>
+                                <td class="gridheader"> Precedent Failed</td>
+                                <td class="gridheader"> Errored Run</td>
+                                <td class="gridheader">Errored Run-Completed</td>
+                                <td class="gridheader">Errored Run-Error</td>
+                                <td class="gridheader">Failed Run</td>
+                                <td class="gridheader">Failed Run-Completed</td>
+                                <td class="gridheader">Failed Run-Failed</td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="paginationmaindiv" id="divEmailAlertPage"  style="display:none; width:3000px;">
+                        <div class="paginationsubdiv">
+                            <div class="paginationbtndiv" id="FRSTbtn" title="First">
+                                <a href="#" class="hreflink"><div class="paginationfirstbtn"><i class="fa fa-angle-double-left" aria-hidden="true"></i></div></a>
+                            </div>
+                            <div class="paginationbtndiv" id="PRVbtn" title="Previous">
+                                <a href="#" class="hreflink"><div class="paginationPRVbtn"><i class="fa fa-angle-left" aria-hidden="true"></i></div></a>
+                            </div>
+                            <div class="paginationbtndiv paginationbtndivNum" id="divPgfirst">
+                                <a href="#" class="hreflink"><div name="1" class="paginationNUMbtn paginationNUMOpenbtn  paginationNUM-ACTVbtn  pagination pgNumber1">1</div></a>
+                            </div>
+                            <div class="paginationbtndiv paginationbtndivNum">
+                                <a href="#" class="hreflink"><div name="2" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber2">2</div></a>
+                            </div>
+                            <div class="paginationbtndiv paginationbtndivNum">
+                                <a href="#" class="hreflink"><div name="3" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber3">3</div></a>
+                            </div>
+                            <div class="paginationbtndiv paginationbtndivNum">
+                                <a href="#" class="hreflink"><div name="4" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber4">4</div></a>
+                            </div>
+                            <div class="paginationbtndiv paginationbtndivNum" id="divPglast">
+                                <a href="#" class="hreflink"><div name="5" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber5">5</div></a>
+                            </div>
+                            <div class="paginationbtndiv" id="NXTbtn" title="Next">
+                                <a href="#" class="hreflink"><div class="paginationNXTbtn"><i class="fa fa-angle-right" aria-hidden="true"></i></div></a>
+                            </div>
+                            <div class="paginationbtndiv" id="LSTbtn" title="Last">
+                                <a href="#" class="hreflink"><div class="paginationPRVbtn"><i class="fa fa-angle-double-right" aria-hidden="true"></i></div></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="space"></div>
+
+        <div class="btndiv1">
+            <p id="pAggregateGrid"></p>
+            <button title="Export" class="submitbtn" @*onclick="AggregateReport();"*@ onclick="location.href = '/ETLReport/AggregateExport'"><img src="~/Images/export.png" alt="" /></button>
+        </div>
+    </div>
+</div>
+
+
+
