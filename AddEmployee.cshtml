@@ -1,0 +1,541 @@
+
+@{ 
+                Layout = "~/Views/Shared/_AdminMaster.cshtml";
+}
+<script type="text/javascript">
+    var CurrenterrorPageId = 1;
+    var RowCount = 10;
+    var OffsetVal = 1;
+    var ClassName = "";
+    var loopVal = 0;
+    var classId = 0;
+    var PageCountError = 0;
+    $('#liInfo').addClass("currentitem");
+
+    function UpdateEmployee(employeeId, employeeName, employeeIsActive, employeeEmail) {
+        $("#divReTypePassword").removeClass("ErrorFocus");
+        $("#divPassword").removeClass("ErrorFocus");
+        $("#divEmailId").removeClass("ErrorFocus");
+        $("#divNewEmployee").removeClass("ErrorFocus");
+
+        $('#divHead').html('Edit Employee');
+        $("#txtEmployeeName").val(employeeName);
+        $("#txtEmailId").val(employeeEmail);
+        $("#txtEmailId").prop('disabled', true);
+
+        $("#divOuterRePassword").hide();
+        $("#divOuterPassword").hide();
+
+
+        $('#btnUpdate').show();
+        $('#btnDelete').show();
+        $('#btnAddEmployee').show();
+
+
+        $('#btnSave').hide();
+        $('#btnCancel').hide();
+
+        $('#pValidateMsg').text('');
+        $('#txtPassword').val('');
+        $('txtReTypePassword').val('');
+
+
+
+        if (employeeIsActive == 1) {
+            $('#chkActive').prop('checked', true);
+
+        }
+        else {
+            $('#chkActive').prop('checked', false);
+        }
+
+        $('#txtEmployeeName').data('empId', employeeId);
+
+
+    }
+  
+      $(document).ready(function () {
+        loadEmployeeDeatils();
+         $(document).mouseup(function (e) {
+             $("#innersetting").hide();
+        });
+       
+        $("#listEmployee").click(function () {
+            $('#liInfo').addClass("currentitem");
+            $('#ilRun').removeClass("currentitem");
+            $('#liReport').removeClass("currentitem");
+        });
+
+        $('#btnUpdate').hide();
+        $('#btnDelete').hide();
+        $('#btnAddEmployee').hide();
+
+        $("#txtEmployeeName").click(function () {
+            $("#divNewEmployee").removeClass("ErrorFocus");
+            $('#pValidateMsg').text('');
+        });
+        $("#txtEmailId").click(function () {
+            $("#divEmailId").removeClass("ErrorFocus");
+            $('#pValidateMsg').text('');
+
+        });
+        $("#txtPassword").click(function () {
+            $("#divPassword").removeClass("ErrorFocus");
+            $('#pValidateMsg').text('');
+
+        });
+        $("#txtReTypePassword").click(function () {
+            $("#divReTypePassword").removeClass("ErrorFocus");
+            $('#pValidateMsg').text('');
+
+        });
+
+
+
+        $('#btnAddEmployee').click(function () {
+            $('#divHead').html('Add Employee');
+
+            $("#divOuterPassword").show();
+            $("#divOuterRePassword").show();
+            $('#txtEmployeeName').val('');
+            $('#txtEmailId').val('');
+            $('#chkActive').prop('checked', true);
+            $("#txtEmailId").prop('disabled', false);
+
+
+            $('#btnUpdate').hide();
+            $('#btnDelete').hide();
+            $('#btnAddEmployee').hide();
+            $('#btnSave').show();
+            $('#btnCancel').show();
+
+            $('#txtPassword').val('');
+            $('#txtReTypePassword').val('');
+
+            $('#pValidateMsg').text('');
+
+            $("#divNewEmployee").removeClass("ErrorFocus");
+            $("#divEmailId").removeClass("ErrorFocus");
+            $("#divPassword").removeClass("ErrorFocus");
+            $("#divReTypePassword").removeClass("ErrorFocus");
+
+
+        });
+
+        $("#btnSave").click(function () {
+            var Name = $("#txtEmployeeName").val();
+            var password = $("#txtPassword").val();
+            var reTypePassword = $("#txtReTypePassword").val();
+            var emailid = $("#txtEmailId").val();
+            var checkBoxActive = $('#chkActive').is(':checked');
+            OffsetVal = ((CurrenterrorPageId - 1) * RowCount);
+            if (Validate("emp")) {
+                var rowCount1 = $('#tblEmployee > tbody').children("tr:gt(0)").length;
+
+                if (rowCount1 == 1 && CurrenterrorPageId == 0) {
+                    CurrenterrorPageId = 1;
+                    location.reload(true);
+                }
+                $.ajax({
+                    type: "POST",
+                    url: "/Admin/CheckEmail",
+                    data: { emailId: emailid },
+                    success: function (response) {
+                        if (response.flag == true)
+                        {
+                            $("#divEmailId").addClass("ErrorFocus");
+                            $('#pValidateMsg').text("* Email id already exists");
+                        }
+                        else {
+                            $("#divEmailId").removeClass("ErrorFocus");
+                            $('#pValidateMsg').text("");
+                            $.ajax({
+                                type: "POST",
+                                url: "/Admin/AddEmployee",
+                                data: { userName: Name, passWord: password, emailId: emailid, checkBoxActive: checkBoxActive, PageNo: OffsetVal, RowCount: RowCount},
+                                success: function (response) {
+                                    if (response.flag == false) {
+
+                                        $('#pValidateMsg').text("* Some error occurs please try again later");
+                                    }
+                                    else {
+                                        var employeeList = $.parseJSON(response.employeeList);
+                                        loadEmployeeDeatils();
+                                       // ShowEmployees(employeeList);
+                                        $('#pValidateMsg').text(" Employee added successfully");
+                                        $("#txtEmployeeName").val('');
+                                        $("#txtEmailId").val('');
+                                        $("#txtPassword").val('');
+                                        $("#txtReTypePassword").val('');
+                                        $('#chkActive').prop('checked', true);
+                                        $('#txtEmployeeName').removeData('empId');
+
+
+                                    }
+                                },
+                                failure: function (response) {
+                                },
+                                error: function (response) {
+                                }
+                            });
+
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+
+            }
+
+        });
+
+        $('#btnUpdate').click(function () {
+
+            if ($('#txtEmployeeName').data("empId") !== undefined) {
+                var empId = $('#txtEmployeeName').data('empId');
+                var employeeName = $('#txtEmployeeName').val();
+                var ischecked = $('#chkActive').is(':checked');
+                var letters = /^[a-zA-Z_ ]*$/;
+                if (employeeName.trim() != "") {
+
+                    if (!employeeName.match(letters)) {
+                        $("#divNewEmployee").addClass("ErrorFocus");
+                        $('#pValidateMsg').text("* Only alphabets are allowed");
+
+                    }
+                    else {
+                        $("#divNewEmployee").removeClass("ErrorFocus");
+                        $('#pValidateMsg').text("");
+                        OffsetVal = ((CurrenterrorPageId - 1) * RowCount);
+                        $.ajax({
+                            type: "POST",
+                            url: "/Admin/UpdateEmployeeDetails",
+                            data: { employeeId: empId, empolyeeName: employeeName, employeeIsActive: ischecked, PageNo: OffsetVal, RowCount: RowCount },
+                            success: function (response) {
+                                if (response.flag == false) {
+                                    $('#pValidateMsg').text("* Some error occurs please try again later");
+
+                                }
+                                else {
+
+
+                                    var employeeList = $.parseJSON(response.employeeList);
+                                    loadEmployeeDeatils();
+                                   // ShowEmployees(employeeList);
+                                    $('#divNewEmployee').removeClass("ErrorFocus");
+                                    $('#pValidateMsg').text("Employee updated successfully");
+                                }
+                            },
+                            failure: function (response) {
+                            },
+                            error: function (response) {
+                            }
+                        });
+                    }
+
+                }
+                else {
+                    $('#divNewEmployee').addClass("ErrorFocus");
+                    $('#pValidateMsg').text("* Employee name cannot be empty");
+
+                }
+
+            }
+
+
+        });
+
+
+        $('#btnDelete').click(function () {
+
+            if ($('#txtEmployeeName').data("empId") !== undefined) {
+                var empId = $('#txtEmployeeName').data('empId');
+                OffsetVal = ((CurrenterrorPageId - 1) * RowCount);
+                $.ajax({
+                    type: "POST",
+                    url: "/Admin/DeleteEmployee",
+                    data: { employeeId: empId, PageNo: OffsetVal, RowCount: RowCount },
+                    success: function (response) {
+                        if (response.flag == false) {
+                            $('#pValidateMsg').text("* Some error occurs please try again later");
+                        }
+                        else if (response.returnvalue == -2)
+                        {
+                            $('#pValidateMsg').text("Data exists, not able to delete!");
+                        }
+                        else
+                        {
+                            var rowCount = $('#tblEmployee > tbody').children("tr:gt(0)").length;
+                            if (rowCount == 1) {
+                                CurrenterrorPageId = CurrenterrorPageId - 1;
+                                classId = classId - 1;
+                                getLoopValAndClassId($('.paginationNUM-ACTVbtn'), $('.paginationNUMMOREtxt-Active'), $('.paginationNUMMOREtxt1-Active'));
+                                prevButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber' + (classId - 1)), $('.pgNumber' + classId), 'paginationNUM-ACTVbtn',
+                                    'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active', CurrenterrorPageId);
+                                disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId, $('.paginationNUM-ACTVbtn'));
+                                loadEmployeeDeatils();
+                            }
+                            //var employeeList = $.parseJSON(response.employeeList);
+                            loadEmployeeDeatils();
+                           // ShowEmployees(employeeList);
+                            $('#txtEmployeeName').removeClass("ErrorFocus");
+                            $('#txtEmployeeName').removeData('empId');
+                            $('#pValidateMsg').text("Employee deleted successfully");
+
+                            $('#divHead').html('Add Employee');
+
+                            $("#divOuterPassword").show();
+                            $("#divOuterRePassword").show();
+                            $('#txtEmployeeName').val('');
+                            $('#txtEmailId').val('');
+                            $('#chkActive').prop('checked', true);
+                            $("#txtEmailId").prop('disabled', false);
+
+
+                            $('#btnUpdate').hide();
+                            $('#btnDelete').hide();
+                            $('#btnAddEmployee').hide();
+                            $('#btnSave').show();
+                            $('#btnCancel').show();
+
+                            $('#txtPassword').val('');
+                            $('#txtReTypePassword').val('');
+
+                            $("#divNewEmployee").removeClass("ErrorFocus");
+                            $("#divEmailId").removeClass("ErrorFocus");
+                            $("#divPassword").removeClass("ErrorFocus");
+                            $("#divReTypePassword").removeClass("ErrorFocus");
+
+
+
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+
+
+            }
+
+
+        });
+        $("#btnCancel").click(function () {
+            $("#txtEmployeeName").val('');
+            $("#txtEmailId").val('');
+            $("#txtPassword").val('');
+            $("#txtReTypePassword").val('');
+            $('#chkActive').prop('checked', true);
+            $('#txtEmployeeName').removeData('empId');
+
+            $("#txtEmailId").prop('disabled', false);
+
+
+            $("#divNewEmployee").removeClass("ErrorFocus");
+            $("#divEmailId").removeClass("ErrorFocus");
+            $("#divPassword").removeClass("ErrorFocus");
+            $("#divReTypePassword").removeClass("ErrorFocus");
+
+            $('#pValidateMsg').text('');
+        });
+        $('.paginationbtndivNum > a').each(function () {
+            $(this).click(function () {
+
+                classId = parseInt($(this).find('.paginationNUMOpenbtn').attr("name"));
+                CurrenterrorPageId = parseInt($(this).find('.paginationNUMOpenbtn').text());
+                loopVal = parseInt($(this).find('.paginationNUMOpenbtn').text());
+                LoadEachButton($('.paginationNUMOpenbtn'), '.pgNumber', 'paginationNUM-ACTVbtn', 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active', PageCountError);
+                loadEmployeeDeatils();
+                disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, loopVal);
+            });
+        });
+        $("#NXTbtn").click(function () {
+            CurrenterrorPageId = CurrenterrorPageId + 1;
+            getLoopValAndClassId($('.paginationNUM-ACTVbtn'), $('.paginationNUMMOREtxt-Active'), $('.paginationNUMMOREtxt1-Active'));
+            NextButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber' + classId), $('.pgNumber' + (classId + 1)), 'paginationNUM-ACTVbtn',
+                PageCountError, 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId);
+            loadEmployeeDeatils();
+        });
+
+        $("#PRVbtn").click(function () {
+            CurrenterrorPageId = CurrenterrorPageId - 1;
+            getLoopValAndClassId($('.paginationNUM-ACTVbtn'), $('.paginationNUMMOREtxt-Active'), $('.paginationNUMMOREtxt1-Active'));
+            prevButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber' + (classId - 1)), $('.pgNumber' + classId), 'paginationNUM-ACTVbtn',
+                'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active', CurrenterrorPageId);
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId, $('.paginationNUM-ACTVbtn'));
+            loadEmployeeDeatils();
+        });
+        $("#FRSTbtn").click(function () {
+            CurrenterrorPageId = 1;
+            FirstButonClick($('.paginationNUMOpenbtn'), $('.pgNumber1'), 'paginationNUM-ACTVbtn', CurrenterrorPageId, 'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId, $('.paginationNUM-ACTVbtn'));
+            loadEmployeeDeatils();
+        });
+        $("#LSTbtn").click(function () {
+            CurrenterrorPageId = PageCountError;
+            LastButtonClick($('.paginationNUMOpenbtn'), $('.pgNumber5'), $('.pgNumber' + CurrenterrorPageId), 'paginationNUM-ACTVbtn', CurrenterrorPageId,
+                'paginationNUMMOREtxt-Active', 'paginationNUMMOREtxt1-Active');
+            disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId);
+            loadEmployeeDeatils();
+        });
+
+
+    });
+    function preventDefaultClick() {
+        $('.hreflink').click(function (e) {
+            e.preventDefault();//prevent default click
+        });
+    }
+    function loadEmployeeDeatils() {
+        OffsetVal = ((CurrenterrorPageId - 1) * RowCount);
+        $.ajax({
+            type: "POST",
+            url: "/Admin/EmployeeDetailsFirstLoad",
+            data: { PageNo: OffsetVal, RowCount: RowCount },
+            success: function (response) {
+                var employeeList = $.parseJSON(response);
+
+                $('#tblEmployee > tbody').children("tr:gt(0)").remove();
+                if (employeeList["Result"] == undefined || employeeList["Result"] == null) {
+                    if (employeeList[0]["TotalRowCount"] % 10 == 0)
+                        PageCountError = employeeList[0]["TotalRowCount"] / 10;
+                    else
+                        PageCountError = Math.floor(employeeList[0]["TotalRowCount"] / 10) + 1;
+                    disableButtons($('#LSTbtn'), $('#NXTbtn'), $('#FRSTbtn'), $('#PRVbtn'), PageCountError, CurrenterrorPageId);
+                    showAndHidePages(PageCountError, CurrenterrorPageId, $('.paginationbtndivNum > a'), '.pgNumber');
+                    var swapRowStyle = true;
+                    var empIsActive = 0;
+                    var activeInactiveClass = "";
+                    var activeInactiveTickClass = "";
+                    for (var i = 0; i < employeeList.length; i++) {
+                        empIsActive = employeeList[i].EmpIsActive;
+                        if (empIsActive) {
+                            activeInactiveClass = "gridrow1schedule";
+                            activeInactiveTickClass = "fa-check";
+
+                        }
+                        else {
+                            activeInactiveClass = "gridrow1nonschedule";
+                            activeInactiveTickClass = "fa-times";
+                        }
+
+
+                        if (swapRowStyle) {
+                            $('#tblEmployee').append("<tr><td class='gridrow1'><a href='#' onclick='UpdateEmployee(" + employeeList[i].ID_Employee + ",\"" +
+                                employeeList[i].EmpName + "\"," + employeeList[i].EmpIsActive + ",\"" + employeeList[i].EmpEmail + "\");'>"
+                                + employeeList[i].EmpName + "</a></td><td class='gridrow1email'>" + employeeList[i].EmpEmail + "</td><td class='gridrow1'><div class='"
+                                + activeInactiveClass + "'><i class='fas " + activeInactiveTickClass + "'></i></div></td></tr>");
+                            swapRowStyle = false;
+
+                        }
+                        else {
+                            $('#tblEmployee').append("<tr><td class='gridrow2'><a href='#'  onclick='UpdateEmployee(" + employeeList[i].ID_Employee + ",\"" + employeeList[i].EmpName + "\"," + employeeList[i].EmpIsActive + ",\"" + employeeList[i].EmpEmail + "\");'>"
+                                + employeeList[i].EmpName + "</a></td><td class='gridrow2email'>" + employeeList[i].EmpEmail + "</td><td class='gridrow2'><div class='"
+                                + activeInactiveClass + "'><i class='fas " + activeInactiveTickClass + "'></i></div></td></tr>");
+                            swapRowStyle = true;
+                        }
+                    }
+
+                    $("#divEmailAlertPage").show();
+                }
+                else {
+                    $('#divEmailAlertPage').hide();
+                    $('#tblEmployee').append("<tr><td colspan='3' class='gridrow1'>No Records Found</td></tr>");
+                }
+                preventDefaultClick();
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+
+        });
+    }
+</script>
+<div class="container">
+    <div class="contentmaindiv">
+        <div class="etlheading" id="divHead">Add Employee</div>
+        <div class="etlcontentdiv">
+            <div class="row">
+                <div class="col-md-4" id="divEmployeeName">
+                    <div class="etllabel">Name</div>
+                    <div class="inputtextdiv" id="divNewEmployee"><input class="etltextbox" type="text" id="txtEmployeeName" maxlength="50"></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">Email Id</div>
+                    <div class="inputtextdiv" id="divEmailId"><input class="etltextbox" type="text" id="txtEmailId" maxlength="50"></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="etllabel">Is Active</div>
+                    <input type="checkbox" id="chkActive" checked>
+                </div>
+                <div class="col-md-4" id="divOuterPassword">
+                    <div class="etllabel">Password</div>
+                    <div class="inputtextdiv" id="divPassword"><input class="etltextbox" type="Password" id="txtPassword" maxlength="50"></div>
+                </div>
+                <div class="col-md-4" id="divOuterRePassword">
+                    <div class="etllabel">Re-Type Password</div>
+                    <div class="inputtextdiv" id="divReTypePassword"><input class="etltextbox" type="password" id="txtReTypePassword" maxlength="50"></div>
+                </div>
+            </div>
+        </div>
+        <div class="space"></div>
+        <div class="btndiv1">
+            <p id="pValidateMsg"></p>
+            <button title="Add" class="submitbtn" id="btnAddEmployee"><i class="fas fa-plus"></i><span>Add User</span></button>
+            <button title="Clear" class="submitbtn" id="btnCancel"><i class="far fa-times-circle"></i></button>
+            <button title="Delete" class="submitbtn" id="btnDelete"><i class="fas fa-trash-alt"></i></button>
+            <button title="Update" class="submitbtn" id="btnUpdate"><i class="fas fa-check"></i></button>
+            <button title="Save" class="submitbtn" id="btnSave"><i class="far fa-save"></i></button>
+
+        </div>
+        <div class="etlheading">Employee Details</div>
+        <div class="gridmaindiv">
+            <table width="100%" style="border: 1px solid #b7b7b7;" border="0" cellspacing="0" cellpadding="0" id="tblEmployee">
+                <tbody>
+                    <tr>
+                        <td width="40%" class="gridheader">Employee Name</td>
+                        <td width="40%" class="gridheader">Email Id</td>
+                        <td width="20%" class="gridheader">Is Active</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="paginationmaindiv" id="divEmailAlertPage" style="display:none;">
+                <div class="paginationsubdiv">
+                    <div class="paginationbtndiv" id="FRSTbtn" title="First">
+                        <a href="#" class="hreflink"><div class="paginationfirstbtn"><i class="fa fa-angle-double-left" aria-hidden="true"></i></div></a>
+                    </div>
+                    <div class="paginationbtndiv" id="PRVbtn" title="Previous">
+                        <a href="#" class="hreflink"><div class="paginationPRVbtn"><i class="fa fa-angle-left" aria-hidden="true"></i></div></a>
+                    </div>
+                    <div class="paginationbtndiv paginationbtndivNum" id="divPgfirst">
+                        <a href="#" class="hreflink"><div name="1" class="paginationNUMbtn paginationNUMOpenbtn  paginationNUM-ACTVbtn  pagination pgNumber1">1</div></a>
+                    </div>
+                    <div class="paginationbtndiv paginationbtndivNum">
+                        <a href="#" class="hreflink"><div name="2" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber2">2</div></a>
+                    </div>
+                    <div class="paginationbtndiv paginationbtndivNum">
+                        <a href="#" class="hreflink"><div name="3" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber3">3</div></a>
+                    </div>
+                    <div class="paginationbtndiv paginationbtndivNum">
+                        <a href="#" class="hreflink"><div name="4" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber4">4</div></a>
+                    </div>
+                    <div class="paginationbtndiv paginationbtndivNum" id="divPglast">
+                        <a href="#" class="hreflink"><div name="5" class="paginationNUMbtn paginationNUMOpenbtn pagination pgNumber5">5</div></a>
+                    </div>
+                    <div class="paginationbtndiv" id="NXTbtn" title="Next">
+                        <a href="#" class="hreflink"><div class="paginationNXTbtn"><i class="fa fa-angle-right" aria-hidden="true"></i></div></a>
+                    </div>
+                    <div class="paginationbtndiv" id="LSTbtn" title="Last">
+                        <a href="#" class="hreflink"><div class="paginationPRVbtn"><i class="fa fa-angle-double-right" aria-hidden="true"></i></div></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mspace"></div>
+    </div>
+</div>
